@@ -1,0 +1,65 @@
+name: Etapa 4 - Permissoes e GITHUB_TOKEN
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+# Configuracao explicita de permissoes do token padrao do GitHub Actions.
+# contents: read -> permite leitura basica do repositorio.
+# issues: write -> habilita criacao de issues via API com GITHUB_TOKEN.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  validar-configuracao:
+    name: Validar condicoes e abrir issue automaticamente
+    runs-on: ubuntu-latest
+    env:
+      REQUIRED_SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar variavel obrigatoria
+        id: check_var
+        run: |
+          if [ -z "${REQUIRED_SUPPORT_EMAIL}" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "Variavel SUPPORT_EMAIL ausente."
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+            echo "Variavel SUPPORT_EMAIL encontrada: ${REQUIRED_SUPPORT_EMAIL}"
+          fi
+
+      - name: Criar issue quando variavel estiver ausente
+        if: ${{ steps.check_var.outputs.missing == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = 'Falha de configuracao: SUPPORT_EMAIL ausente';
+            const body = [
+              'O workflow detectou ausencia da variavel de repositorio SUPPORT_EMAIL.',
+              '',
+              `Workflow: ${context.workflow}`,
+              `Job: ${context.job}`,
+              `Run ID: ${context.runId}`,
+              `Disparado por: ${context.actor}`,
+              '',
+              'Acao recomendada: configurar SUPPORT_EMAIL em Settings > Secrets and variables > Actions > Variables.'
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['automation', 'tp3']
+            });
+
+      - name: Confirmar cenario sem issue
+        if: ${{ steps.check_var.outputs.missing == 'false' }}
+        run: echo "Nenhuma issue criada, variavel obrigatoria presente."
