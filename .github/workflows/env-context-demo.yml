@@ -1,0 +1,52 @@
+name: Etapa 3 - Env Context Demo
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+# Escopo de workflow: disponivel para todos os jobs/steps, salvo quando sobrescrito.
+env:
+  STAGE: test
+  LEVEL_VAR: workflow-level
+  SHARED_EMAIL: suporte-workflow@devcalc.local
+
+jobs:
+  demonstrar-escopos:
+    name: Demonstrar contextos e escopos
+    runs-on: ubuntu-latest
+
+    # Escopo de job: sobrescreve LEVEL_VAR definido no workflow.
+    env:
+      LEVEL_VAR: job-level
+      JOB_ONLY_VAR: job-visible
+
+    steps:
+      - name: Exibir contextos e variaveis (workflow + job)
+        run: |
+          echo "github.actor=${{ github.actor }}"
+          echo "runner.os=${{ runner.os }}"
+          echo "STAGE=${STAGE}"
+          echo "LEVEL_VAR=${LEVEL_VAR}"
+          echo "SHARED_EMAIL=${SHARED_EMAIL}"
+          echo "JOB_ONLY_VAR=${JOB_ONLY_VAR}"
+
+      - name: Sobrescrever variavel no escopo de step
+        # Escopo de step: sobrescreve LEVEL_VAR do job apenas neste step.
+        env:
+          LEVEL_VAR: step-level
+          STEP_ONLY_VAR: step-visible
+        run: |
+          echo "github.actor=${{ github.actor }}"
+          echo "runner.os=${{ runner.os }}"
+          echo "STAGE=${STAGE}"
+          echo "LEVEL_VAR=${LEVEL_VAR}"
+          echo "SHARED_EMAIL=${SHARED_EMAIL}"
+          echo "JOB_ONLY_VAR=${JOB_ONLY_VAR}"
+          echo "STEP_ONLY_VAR=${STEP_ONLY_VAR}"
+
+      - name: Confirmar restauracao apos step
+        run: |
+          echo "Depois do step anterior, LEVEL_VAR volta para o escopo de job."
+          echo "LEVEL_VAR=${LEVEL_VAR}"
+          echo "STAGE=${STAGE}"
