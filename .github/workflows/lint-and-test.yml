@@ -1,0 +1,80 @@
+name: Lint and Test (Reusable)
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+'on':
+  workflow_call:
+    inputs:
+      java-version:
+        description: Java version used by setup-java
+        required: false
+        type: string
+        default: '17'
+      project-path:
+        description: Relative path to the Maven project
+        required: false
+        type: string
+        default: Tp1/PartePratica2/DEVOPS2026-ricknmorty-api
+      default-branch:
+        description: Repository default branch
+        required: false
+        type: string
+        default: main
+      run_tests:
+        description: Executar job de build e testes
+        required: false
+        type: boolean
+        default: true
+      run_lint:
+        description: Executar job de lint
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build-and-test:
+    name: Build e Testes
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_tests }}
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: temurin
+          cache: maven
+
+      - name: Build e Testes com Maven
+        working-directory: ${{ inputs.project-path }}
+        run: mvn clean verify
+
+  lint:
+    name: Analise de Codigo (Super Linter)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_lint && (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped') }}
+    needs: build-and-test
+
+    permissions:
+      contents: read
+      statuses: write
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Executar Super Linter
+        uses: github/super-linter@v7
+        env:
+          DEFAULT_BRANCH: ${{ inputs.default-branch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER_REGEX_EXCLUDE: .*target/.*
+          VALIDATE_JAVA: true
+          VALIDATE_XML: true
+          VALIDATE_YAML: true

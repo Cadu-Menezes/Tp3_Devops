@@ -1,0 +1,37 @@
+services:
+  db:
+    build:
+      context: ./PartePratica1
+      dockerfile: Dockerfile
+    container_name: tp1-postgres
+    environment:
+      POSTGRES_DB: rickmorty
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: appsecret
+    volumes:
+      - tp1-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d rickmorty"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./PartePratica2/DEVOPS2026-ricknmorty-api
+      dockerfile: Dockerfile
+    container_name: tp1-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/rickmorty
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: appsecret
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  tp1-pgdata:

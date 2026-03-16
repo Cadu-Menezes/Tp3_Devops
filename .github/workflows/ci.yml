@@ -1,0 +1,34 @@
+name: CI - DevCalc
+
+'on':
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Executar testes automatizados'
+        type: boolean
+        default: true
+        required: false
+      run_lint:
+        description: 'Executar analise de codigo (lint)'
+        type: boolean
+        default: true
+        required: false
+
+jobs:
+  lint-and-test:
+    name: Lint e Testes (Workflow Reutilizavel)
+    uses: ./.github/workflows/lint-and-test.yml
+    permissions:
+      contents: read
+      statuses: write
+    with:
+      java-version: '17'
+      project-path: Tp1/PartePratica2/DEVOPS2026-ricknmorty-api
+      default-branch: main
+      run_tests: ${{ github.event_name != 'workflow_dispatch' || inputs.run_tests }}
+      run_lint: ${{ github.event_name != 'workflow_dispatch' || inputs.run_lint }}
+    secrets: inherit

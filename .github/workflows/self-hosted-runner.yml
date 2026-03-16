@@ -1,0 +1,54 @@
+name: Self-Hosted Runner - DevCalc
+
+'on':
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  verificar-ambiente:
+    name: Verificar Ambiente do Runner Local
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Evidencia do runner auto-hospedado
+        run: |
+          Write-Output "Runner Name: $env:RUNNER_NAME"
+          Write-Output "Runner OS: $env:RUNNER_OS"
+          Write-Output "Host Local: $env:COMPUTERNAME"
+        shell: pwsh
+
+      - name: Informacoes do sistema operacional
+        run: systeminfo | Select-String -Pattern "OS Name","OS Version","System Type"
+        shell: pwsh
+
+      - name: Versao do Java instalado
+        run: java -version
+        shell: pwsh
+
+      - name: Versao do Maven instalado
+        run: mvn -version
+        shell: pwsh
+
+      - name: Instalar software adicional no runner
+        run: |
+          if ($env:RUNNER_OS -eq "Windows") {
+            choco install git-lfs --yes --no-progress
+            git lfs version
+          }
+          elseif ($env:RUNNER_OS -eq "Linux") {
+            sudo apt-get update
+            sudo apt-get install -y jq
+            jq --version
+          }
+          else {
+            Write-Error "Sistema operacional nao suportado. Este workflow cobre Windows e Linux."
+          }
+        shell: pwsh
+
+      - name: Confirmar execucao local concluida
+        run: Write-Output "Pipeline executado com sucesso no runner auto-hospedado local."
+        shell: pwsh
