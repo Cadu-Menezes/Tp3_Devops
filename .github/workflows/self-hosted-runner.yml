@@ -8,7 +8,7 @@ name: Self-Hosted Runner - DevCalc
 jobs:
   verificar-ambiente:
     name: Verificar Ambiente do Runner Local
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
       - name: Checkout do codigo
@@ -19,19 +19,19 @@ jobs:
           Write-Output "Runner Name: $env:RUNNER_NAME"
           Write-Output "Runner OS: $env:RUNNER_OS"
           Write-Output "Host Local: $env:COMPUTERNAME"
-        shell: pwsh
+        shell: powershell
 
       - name: Informacoes do sistema operacional
         run: systeminfo | Select-String -Pattern "OS Name","OS Version","System Type"
-        shell: pwsh
+        shell: powershell
 
       - name: Versao do Java instalado
         run: java -version
-        shell: pwsh
+        shell: powershell
 
       - name: Versao do Maven instalado
         run: mvn -version
-        shell: pwsh
+        shell: powershell
 
       - name: Instalar software adicional no runner
         run: |
@@ -47,8 +47,8 @@ jobs:
           else {
             Write-Error "Sistema operacional nao suportado. Este workflow cobre Windows e Linux."
           }
-        shell: pwsh
+        shell: powershell
 
       - name: Confirmar execucao local concluida
         run: Write-Output "Pipeline executado com sucesso no runner auto-hospedado local."
-        shell: pwsh
+        shell: powershell
